@@ -16,8 +16,8 @@ public class Plan
     public bool HasActiveRiskLoading { get; set; }
     public bool HasActiveExclusion { get; set; }
 
-    public Money GrossPremium { get; set; }
-    public Money PrivateInsuranceExtraPremium { get; set; }
+    public Money GrossPremium { get; set; } = Money.Zero();
+    public Money PrivateInsuranceExtraPremium { get; set; } = Money.Zero();
 
     public DateTime? AddedAt { get; set; }
     public DateTime? StatusChangedAt { get; set; }
