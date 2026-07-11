@@ -1,0 +1,100 @@
+# =========================================================
+# .NET build outputs
+# =========================================================
+bin/
+obj/
+[Bb]uild/
+[Bb]uilds/
+out/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Ll]og/
+[Ll]ogs/
+
+# Rider / ReSharper caches
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+.idea/
+
+# Visual Studio user-specific files
+.vs/
+*.user
+*.userosscache
+*.suo
+*.userprefs
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.trx
+*.coverage
+*.coveragexml
+coverage/
+TestResults/
+
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+
+# Publish
+publish/
+*.[Pp]ublish[Ss]ettings
+PublishScripts/
+PublishProfiles/
+
+# =========================================================
+# Secrets & local overrides
+# =========================================================
+appsettings.Development.local.json
+appsettings.local.json
+*.secret.*
+*.pfx
+*.key
+*.pem
+secrets.json
+
+# User secrets scaffold (safe to commit the ID; not the values)
+# The values live outside the repo under ~/.microsoft/usersecrets/<id>/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# =========================================================
+# OS junk
+# =========================================================
+.DS_Store
+Thumbs.db
+Desktop.ini
+._*
+
+# =========================================================
+# Claude Code local settings (project-wide skills/commands are committed)
+# =========================================================
+.claude/settings.local.json
+
+# =========================================================
+# Scratch
+# =========================================================
+scratchpad/
+*.tmp
+*.temp
