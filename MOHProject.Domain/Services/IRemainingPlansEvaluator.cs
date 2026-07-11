@@ -1,6 +1,6 @@
 using MOHProject.Domain.Entities;
 
-namespace MOHProject.Application.Ports;
+namespace MOHProject.Domain.Services;
 
 public interface IRemainingPlansEvaluator
 {

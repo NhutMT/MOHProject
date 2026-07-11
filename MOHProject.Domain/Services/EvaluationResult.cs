@@ -1,7 +1,7 @@
 using MOHProject.Domain.Entities;
 using MOHProject.Domain.Enums;
 
-namespace MOHProject.Application.Ports;
+namespace MOHProject.Domain.Services;
 
 public sealed record EvaluationResult(
     RiskComposition Composition,

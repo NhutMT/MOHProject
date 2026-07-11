@@ -1,6 +1,6 @@
 using MOHProject.Domain.ValueObjects;
 
-namespace MOHProject.Application.Ports;
+namespace MOHProject.Domain.Services;
 
 public sealed record PolicyContext(
     ResidencyPair Residency,
