@@ -43,6 +43,7 @@ public static class DependencyInjection
         // Repositories + writers (scoped — hold the DbContext).
         services.AddScoped<IPolicyRepository, EfPolicyRepository>();
         services.AddScoped<IAuditTrailWriter, EfAuditTrailWriter>();
+        services.AddScoped<ILetterGenerator, EfLetterGenerator>();
 
         return services;
     }
