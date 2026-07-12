@@ -58,6 +58,7 @@ Ack page:
 
 ## Open questions
 - **Q-CB-001:** Base = Loading + all riders Standard — is the letter LOA (base is the only exception, treated as Loading-only edge) or CLOA(RCMP)? Doc's table is ambiguous. BA to confirm.
+- **Q-CB-002:** *Composition semantics mismatch between doc §1.5 and §1.6.* — `PlansCompositionEvaluator` (source lines 1904-1911, per-plan check) returns `ExclusionOnly` when Base=Loading + Rider=Exclusion. §1.6.2 (source lines 1719-1761) expects `CloaRcmp` for this exact combo because the *aggregate* of Base + Riders spans both Loading and Exclusion. Impl of `LetterTypeEvaluator` in PH-02 currently uses per-plan composition — will emit `CloaExclusion` where `CloaRcmp` is expected. **Blocker for PH-04 letter emission.** Two candidate resolutions: (a) `LetterTypeEvaluator` takes Base plan's `RiskCategory` as extra input and layers §1.6 rules on top of composition; (b) introduce a separate `AggregateComposition` distinct from the per-plan `RiskComposition`. Confirm intent with BA.
 
 ## Change log
 | Date       | Version | Change        | Author |
