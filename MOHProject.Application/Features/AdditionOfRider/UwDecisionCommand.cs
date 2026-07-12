@@ -86,9 +86,8 @@ public sealed class UwDecisionCommandHandler
         policy.Substatus = finalSubstatus;
         await _policies.SaveAsync(policy, ct);
 
-        await _audit.WriteAsync(policy.Id, AuditEventType, new
+        await _audit.WriteAsync(policy.Id, AuditEventType, command.ActorUserId, new
         {
-            command.ActorUserId,
             EntrySubstatus = entrySubstatus,
             command.Decision,
             FinalSubstatus = finalSubstatus,

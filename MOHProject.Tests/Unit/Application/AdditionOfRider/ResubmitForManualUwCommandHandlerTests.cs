@@ -33,7 +33,7 @@ public class ResubmitForManualUwCommandHandlerTests
         var policy = new Policy { Id = 5, Substatus = from };
         _repo.Setup(r => r.GetByIdAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(policy);
         _repo.Setup(r => r.SaveAsync(policy, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-        _audit.Setup(a => a.WriteAsync(5L, ResubmitForManualUwCommandHandler.AuditEventType, It.IsAny<object>(), It.IsAny<CancellationToken>()))
+        _audit.Setup(a => a.WriteAsync(5L, ResubmitForManualUwCommandHandler.AuditEventType, It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
               .Returns(Task.CompletedTask);
 
         await CreateSut().HandleAsync(new ResubmitForManualUwCommand(5, "u1"), default);
@@ -62,7 +62,7 @@ public class ResubmitForManualUwCommandHandlerTests
 
         policy.Substatus.Should().Be(from, "state must not mutate on rejection");
         _repo.Verify(r => r.SaveAsync(It.IsAny<Policy>(), It.IsAny<CancellationToken>()), Times.Never);
-        _audit.Verify(a => a.WriteAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>()),
+        _audit.Verify(a => a.WriteAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>()),
                       Times.Never);
     }
 

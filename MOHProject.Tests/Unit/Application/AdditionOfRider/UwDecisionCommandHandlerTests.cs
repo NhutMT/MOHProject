@@ -50,7 +50,7 @@ public class UwDecisionCommandHandlerTests
         _repo.Setup(r => r.SaveAsync(policy, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
         _letters.Setup(l => l.GenerateAsync(policy.Id, LetterType.MedicalEvidence, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new Letter { Type = LetterType.MedicalEvidence });
-        _audit.Setup(a => a.WriteAsync(policy.Id, UwDecisionCommandHandler.AuditEventType, It.IsAny<object>(), It.IsAny<CancellationToken>()))
+        _audit.Setup(a => a.WriteAsync(policy.Id, UwDecisionCommandHandler.AuditEventType, It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
               .Returns(Task.CompletedTask);
 
         await CreateSut().HandleAsync(new UwDecisionCommand(policy.Id, UwDecision.Aps, "u"), default);
@@ -76,7 +76,7 @@ public class UwDecisionCommandHandlerTests
         _repo.Setup(r => r.SaveAsync(policy, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
         _letters.Setup(l => l.GenerateAsync(policy.Id, LetterType.CloaExclusion, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new Letter { Type = LetterType.CloaExclusion });
-        _audit.Setup(a => a.WriteAsync(policy.Id, UwDecisionCommandHandler.AuditEventType, It.IsAny<object>(), It.IsAny<CancellationToken>()))
+        _audit.Setup(a => a.WriteAsync(policy.Id, UwDecisionCommandHandler.AuditEventType, It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
               .Returns(Task.CompletedTask);
 
         await CreateSut().HandleAsync(new UwDecisionCommand(policy.Id, UwDecision.Standard, "u"), default);
@@ -102,7 +102,7 @@ public class UwDecisionCommandHandlerTests
         _letters.Setup(l => l.GenerateAsync(policy.Id, It.IsAny<LetterType>(), It.IsAny<CancellationToken>()))
                 .Callback<long, LetterType, CancellationToken>((_, t, _) => order.Add(t))
                 .ReturnsAsync((long _, LetterType t, CancellationToken _) => new Letter { Type = t });
-        _audit.Setup(a => a.WriteAsync(policy.Id, UwDecisionCommandHandler.AuditEventType, It.IsAny<object>(), It.IsAny<CancellationToken>()))
+        _audit.Setup(a => a.WriteAsync(policy.Id, UwDecisionCommandHandler.AuditEventType, It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
               .Returns(Task.CompletedTask);
 
         await CreateSut().HandleAsync(new UwDecisionCommand(policy.Id, UwDecision.Declined, "u"), default);

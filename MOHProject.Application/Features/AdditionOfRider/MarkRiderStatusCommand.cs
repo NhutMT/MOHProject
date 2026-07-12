@@ -87,9 +87,8 @@ public sealed class MarkRiderStatusCommandHandler
 
         await _policies.SaveAsync(policy, ct);
 
-        await _audit.WriteAsync(policy.Id, AuditEventType, new
+        await _audit.WriteAsync(policy.Id, AuditEventType, command.ActorUserId, new
         {
-            command.ActorUserId,
             command.PlanId,
             RiderProductCode = rider.ProductCode,
             PreviousStatus = previousStatus,

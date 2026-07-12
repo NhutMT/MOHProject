@@ -37,7 +37,7 @@ public class SaveUnderwritingTabCommandHandlerTests
         policy.Substatus.Should().Be(PolicySubstatus.PendingCashCollection,
             "no Draft plan means Risk Category is not BLANK — auto-route rule does not fire");
         _repo.Verify(r => r.SaveAsync(It.IsAny<Policy>(), It.IsAny<CancellationToken>()), Times.Never);
-        _audit.Verify(a => a.WriteAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>()),
+        _audit.Verify(a => a.WriteAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>()),
                       Times.Never);
     }
 
@@ -50,14 +50,14 @@ public class SaveUnderwritingTabCommandHandlerTests
 
         _repo.Setup(r => r.GetByIdAsync(3, It.IsAny<CancellationToken>())).ReturnsAsync(policy);
         _repo.Setup(r => r.SaveAsync(policy, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-        _audit.Setup(a => a.WriteAsync(3L, SaveUnderwritingTabCommandHandler.AuditEventType, It.IsAny<object>(), It.IsAny<CancellationToken>()))
+        _audit.Setup(a => a.WriteAsync(3L, SaveUnderwritingTabCommandHandler.AuditEventType, It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
               .Returns(Task.CompletedTask);
 
         await CreateSut().HandleAsync(new SaveUnderwritingTabCommand(3, "u9"), default);
 
         policy.Substatus.Should().Be(PolicySubstatus.PendingManualUnderwriting);
         _repo.Verify(r => r.SaveAsync(policy, It.IsAny<CancellationToken>()), Times.Once);
-        _audit.Verify(a => a.WriteAsync(3L, SaveUnderwritingTabCommandHandler.AuditEventType, It.IsAny<object>(), It.IsAny<CancellationToken>()),
+        _audit.Verify(a => a.WriteAsync(3L, SaveUnderwritingTabCommandHandler.AuditEventType, It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>()),
                       Times.Once);
     }
 

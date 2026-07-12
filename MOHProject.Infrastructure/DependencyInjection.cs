@@ -40,8 +40,9 @@ public static class DependencyInjection
         services.AddSingleton<IEntryPointHandler, PendingPpResponseFileCpfRejectedHandler>();
         services.AddSingleton<IEntryPointHandlerRegistry, EntryPointHandlerRegistry>();
 
-        // Repositories (scoped — hold the DbContext).
+        // Repositories + writers (scoped — hold the DbContext).
         services.AddScoped<IPolicyRepository, EfPolicyRepository>();
+        services.AddScoped<IAuditTrailWriter, EfAuditTrailWriter>();
 
         return services;
     }

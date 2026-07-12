@@ -44,7 +44,7 @@ public sealed class ResubmitForManualUwCommandHandler
         policy.Substatus = PolicySubstatus.PendingManualUnderwriting;
         await _policies.SaveAsync(policy, ct);
 
-        await _audit.WriteAsync(policy.Id, AuditEventType,
-            new { command.ActorUserId, TriggeredAt = DateTime.UtcNow }, ct);
+        await _audit.WriteAsync(policy.Id, AuditEventType, command.ActorUserId,
+            new { TriggeredAt = DateTime.UtcNow }, ct);
     }
 }

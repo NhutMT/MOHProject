@@ -94,7 +94,7 @@ public class MarkRiderStatusCommandHandlerTests
         _letters.Setup(l => l.GenerateAsync(policy.Id, It.IsAny<LetterType>(), It.IsAny<CancellationToken>()))
                 .Callback<long, LetterType, CancellationToken>((_, t, _) => lettersEmitted.Add(t))
                 .ReturnsAsync((long _, LetterType t, CancellationToken _) => new Letter { Type = t });
-        _audit.Setup(a => a.WriteAsync(policy.Id, MarkRiderStatusCommandHandler.AuditEventType, It.IsAny<object>(), It.IsAny<CancellationToken>()))
+        _audit.Setup(a => a.WriteAsync(policy.Id, MarkRiderStatusCommandHandler.AuditEventType, It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
               .Returns(Task.CompletedTask);
 
         await CreateSut().HandleAsync(new MarkRiderStatusCommand(policy.Id, 20, target, "u"), default);
@@ -120,7 +120,7 @@ public class MarkRiderStatusCommandHandlerTests
         _repo.Setup(r => r.SaveAsync(policy, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
         _letters.Setup(l => l.GenerateAsync(policy.Id, LetterType.NtuWithoutRefund, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new Letter { Type = LetterType.NtuWithoutRefund });
-        _audit.Setup(a => a.WriteAsync(policy.Id, MarkRiderStatusCommandHandler.AuditEventType, It.IsAny<object>(), It.IsAny<CancellationToken>()))
+        _audit.Setup(a => a.WriteAsync(policy.Id, MarkRiderStatusCommandHandler.AuditEventType, It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
               .Returns(Task.CompletedTask);
 
         await CreateSut().HandleAsync(new MarkRiderStatusCommand(policy.Id, 20, ProductStatus.NotTakenUp, "u"), default);
