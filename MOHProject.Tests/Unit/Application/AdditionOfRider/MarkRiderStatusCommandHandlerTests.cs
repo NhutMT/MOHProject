@@ -21,7 +21,7 @@ public class MarkRiderStatusCommandHandlerTests
         NullLogger<RemainingPlansEvaluator>.Instance);
 
     private MarkRiderStatusCommandHandler CreateSut() =>
-        new(_repo.Object, _evaluator, _letters.Object, _audit.Object);
+        new(_repo.Object, _evaluator, _letters.Object, _audit.Object, new PassthroughUnitOfWork());
 
     [Fact]
     public async Task DisallowedTargetStatus_ThrowsBeforeAnyIo()

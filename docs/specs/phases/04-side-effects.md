@@ -1,7 +1,7 @@
 ---
 id: PH-04
-version: 0.1
-status: draft
+version: 0.2
+status: done
 last_updated: 2026-07-11
 depends_on: [PH-03]
 estimated_effort: 2 weeks (1 dev)
@@ -57,3 +57,4 @@ After Phase 4, running a `UwDecisionCommand` produces persisted `Letter` rows, u
 | Date       | Version | Change        | Author |
 |------------|---------|---------------|--------|
 | 2026-07-11 | 0.1     | Initial draft | Claude |
+| 2026-07-12 | 0.2     | Delivered 5/6 tasks: recalculator + audit + letter generator + UoW + E2E. PH-04-03 Razor templates deferred to Phase 7 (blocked on Q-401 BA copy). 223/223 tests green. | Claude |

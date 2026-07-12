@@ -40,7 +40,7 @@ public class UwDecisionCommandHandlerTests
     }
 
     private UwDecisionCommandHandler CreateSut() =>
-        new(_repo.Object, _registry, _evaluator, _letters.Object, _audit.Object);
+        new(_repo.Object, _registry, _evaluator, _letters.Object, _audit.Object, new PassthroughUnitOfWork());
 
     [Fact]
     public async Task ApsAtCondAccept_OverridesToPendingUwAps_EmitsMedicalEvidenceOnly()

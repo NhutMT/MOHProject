@@ -21,26 +21,33 @@ public sealed class UwDecisionCommandHandler
     private readonly IRemainingPlansEvaluator _evaluator;
     private readonly ILetterGenerator _letters;
     private readonly IAuditTrailWriter _audit;
+    private readonly IUnitOfWork _uow;
 
     public UwDecisionCommandHandler(
         IPolicyRepository policies,
         IEntryPointHandlerRegistry handlers,
         IRemainingPlansEvaluator evaluator,
         ILetterGenerator letters,
-        IAuditTrailWriter audit)
+        IAuditTrailWriter audit,
+        IUnitOfWork uow)
     {
         _policies = policies;
         _handlers = handlers;
         _evaluator = evaluator;
         _letters = letters;
         _audit = audit;
+        _uow = uow;
     }
 
-    public async Task HandleAsync(UwDecisionCommand command, CancellationToken ct)
+    public Task HandleAsync(UwDecisionCommand command, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(command);
+        return _uow.ExecuteInTransactionAsync(HandleInner, ct);
 
-        var policy = await _policies.GetByIdAsync(command.PolicyId, ct)
+        async Task HandleInner(CancellationToken innerCt)
+        {
+
+        var policy = await _policies.GetByIdAsync(command.PolicyId, innerCt)
             ?? throw new InvalidOperationException($"Policy {command.PolicyId} not found.");
 
         if (policy.UWState is null)
@@ -55,7 +62,7 @@ public sealed class UwDecisionCommandHandler
 
         // 2. Decision-specific letters (Medical Evidence / Decline / Postpone / NTU).
         foreach (var letterType in directive.DecisionSpecificLetters)
-            await _letters.GenerateAsync(policy.Id, letterType, ct);
+            await _letters.GenerateAsync(policy.Id, letterType, innerCt);
 
         // 3. IP-record side effects — Phase 4 will wire an ICpfIpFileService port.
         // For now these directives are surfaced only in the audit payload.
@@ -80,11 +87,11 @@ public sealed class UwDecisionCommandHandler
             composition = result.Composition;
 
             if (mainLetter is { } main)
-                await _letters.GenerateAsync(policy.Id, main, ct);
+                await _letters.GenerateAsync(policy.Id, main, innerCt);
         }
 
         policy.Substatus = finalSubstatus;
-        await _policies.SaveAsync(policy, ct);
+        await _policies.SaveAsync(policy, innerCt);
 
         await _audit.WriteAsync(policy.Id, AuditEventType, command.ActorUserId, new
         {
@@ -97,7 +104,8 @@ public sealed class UwDecisionCommandHandler
             directive.AutoCreateIpRecord,
             directive.AutoRemoveIpRecord,
             directive.SkipBasePremiumRecalc,
-        }, ct);
+        }, innerCt);
+        }
     }
 
     private static PolicyContext BuildContext(Policy policy)

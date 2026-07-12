@@ -32,72 +32,81 @@ public sealed class MarkRiderStatusCommandHandler
     private readonly IRemainingPlansEvaluator _evaluator;
     private readonly ILetterGenerator _letters;
     private readonly IAuditTrailWriter _audit;
+    private readonly IUnitOfWork _uow;
 
     public MarkRiderStatusCommandHandler(
         IPolicyRepository policies,
         IRemainingPlansEvaluator evaluator,
         ILetterGenerator letters,
-        IAuditTrailWriter audit)
+        IAuditTrailWriter audit,
+        IUnitOfWork uow)
     {
         _policies = policies;
         _evaluator = evaluator;
         _letters = letters;
         _audit = audit;
+        _uow = uow;
     }
 
-    public async Task HandleAsync(MarkRiderStatusCommand command, CancellationToken ct)
+    public Task HandleAsync(MarkRiderStatusCommand command, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(command);
 
+        // Guard fires BEFORE the transaction opens — no DB work if invalid.
         if (!AllowedTargetStatuses.Contains(command.NewStatus))
             throw new InvalidOperationException(
                 $"Cannot mark a rider as '{command.NewStatus}' via this command. " +
                 $"Allowed target statuses: {string.Join(", ", AllowedTargetStatuses)}.");
 
-        var policy = await _policies.GetByIdAsync(command.PolicyId, ct)
-            ?? throw new InvalidOperationException($"Policy {command.PolicyId} not found.");
+        return _uow.ExecuteInTransactionAsync(HandleInner, ct);
 
-        var rider = policy.Plans.FirstOrDefault(p => p.Id == command.PlanId)
-            ?? throw new InvalidOperationException(
-                $"Plan {command.PlanId} not found on policy {command.PolicyId}.");
-
-        if (rider.IsBase)
-            throw new InvalidOperationException(
-                $"Cannot change status of the Base plan via this command. " +
-                "Base plans cannot be NTU'd, Declined, or Postponed independently of the policy.");
-
-        var previousStatus = rider.Status;
-        rider.Status = command.NewStatus;
-        rider.StatusChangedAt = DateTime.UtcNow;
-
-        // Emit the decision-specific letter (NTU / Decline / Postpone).
-        var decisionLetter = DecisionLetterFor(command.NewStatus);
-        await _letters.GenerateAsync(policy.Id, decisionLetter, ct);
-
-        // The event that fixes the 4 UAT bugs: run the evaluator, apply its result.
-        var evalResult = _evaluator.EvaluateAfterAction(policy, BuildContext(policy));
-
-        policy.Substatus = evalResult.NextSubstatus;
-        policy.UWState = evalResult.UpdatedUWState;
-
-        // Main letter (LOA / CLOA per composition) — may be null when the new
-        // substatus is outside the letter-gating set.
-        if (evalResult.LetterToGenerate is { } main)
-            await _letters.GenerateAsync(policy.Id, main, ct);
-
-        await _policies.SaveAsync(policy, ct);
-
-        await _audit.WriteAsync(policy.Id, AuditEventType, command.ActorUserId, new
+        async Task HandleInner(CancellationToken innerCt)
         {
-            command.PlanId,
-            RiderProductCode = rider.ProductCode,
-            PreviousStatus = previousStatus,
-            NewStatus = command.NewStatus,
-            evalResult.Composition,
-            NextSubstatus = evalResult.NextSubstatus,
-            DecisionLetter = decisionLetter,
-            MainLetter = evalResult.LetterToGenerate,
-        }, ct);
+            var policy = await _policies.GetByIdAsync(command.PolicyId, innerCt)
+                ?? throw new InvalidOperationException($"Policy {command.PolicyId} not found.");
+
+            var rider = policy.Plans.FirstOrDefault(p => p.Id == command.PlanId)
+                ?? throw new InvalidOperationException(
+                    $"Plan {command.PlanId} not found on policy {command.PolicyId}.");
+
+            if (rider.IsBase)
+                throw new InvalidOperationException(
+                    $"Cannot change status of the Base plan via this command. " +
+                    "Base plans cannot be NTU'd, Declined, or Postponed independently of the policy.");
+
+            var previousStatus = rider.Status;
+            rider.Status = command.NewStatus;
+            rider.StatusChangedAt = DateTime.UtcNow;
+
+            // Emit the decision-specific letter (NTU / Decline / Postpone).
+            var decisionLetter = DecisionLetterFor(command.NewStatus);
+            await _letters.GenerateAsync(policy.Id, decisionLetter, innerCt);
+
+            // The event that fixes the 4 UAT bugs: run the evaluator, apply its result.
+            var evalResult = _evaluator.EvaluateAfterAction(policy, BuildContext(policy));
+
+            policy.Substatus = evalResult.NextSubstatus;
+            policy.UWState = evalResult.UpdatedUWState;
+
+            // Main letter (LOA / CLOA per composition) — may be null when the new
+            // substatus is outside the letter-gating set.
+            if (evalResult.LetterToGenerate is { } main)
+                await _letters.GenerateAsync(policy.Id, main, innerCt);
+
+            await _policies.SaveAsync(policy, innerCt);
+
+            await _audit.WriteAsync(policy.Id, AuditEventType, command.ActorUserId, new
+            {
+                command.PlanId,
+                RiderProductCode = rider.ProductCode,
+                PreviousStatus = previousStatus,
+                NewStatus = command.NewStatus,
+                evalResult.Composition,
+                NextSubstatus = evalResult.NextSubstatus,
+                DecisionLetter = decisionLetter,
+                MainLetter = evalResult.LetterToGenerate,
+            }, innerCt);
+        }
     }
 
     private static LetterType DecisionLetterFor(ProductStatus status) => status switch

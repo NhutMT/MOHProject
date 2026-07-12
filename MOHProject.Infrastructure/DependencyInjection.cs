@@ -44,6 +44,7 @@ public static class DependencyInjection
         services.AddScoped<IPolicyRepository, EfPolicyRepository>();
         services.AddScoped<IAuditTrailWriter, EfAuditTrailWriter>();
         services.AddScoped<ILetterGenerator, EfLetterGenerator>();
+        services.AddScoped<IUnitOfWork, EfUnitOfWork>();
 
         return services;
     }
