@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using MOHProject.Application.Ports;
 using MOHProject.Domain.Services;
 using MOHProject.Domain.Services.EntryPoints;
 using MOHProject.Infrastructure.Persistence;
@@ -37,6 +38,9 @@ public static class DependencyInjection
         services.AddSingleton<IEntryPointHandler, PendingPpRequestFileHandler>();
         services.AddSingleton<IEntryPointHandler, PendingPpResponseFileCpfRejectedHandler>();
         services.AddSingleton<IEntryPointHandlerRegistry, EntryPointHandlerRegistry>();
+
+        // Repositories (scoped — hold the DbContext).
+        services.AddScoped<IPolicyRepository, EfPolicyRepository>();
 
         return services;
     }
