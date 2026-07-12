@@ -1,7 +1,7 @@
 ---
 id: PH-02
-version: 0.1
-status: draft
+version: 0.2
+status: done
 last_updated: 2026-07-11
 depends_on: [PH-01, DOMAIN-MODEL]
 estimated_effort: 2 weeks (1 dev)
@@ -79,6 +79,7 @@ Naming: `UatBug_2610000310P_NtuExclusionRider_SubstatusResetsToPendingCash` etc.
 - **Silent enum drift.** Every enum value referenced in the truth tables should have an explicit branch or a `switch` expression with exhaustiveness — compiler warnings enabled (`TreatWarningsAsErrors` on the Domain project).
 
 ## Change log
-| Date       | Version | Change        | Author |
-|------------|---------|---------------|--------|
-| 2026-07-11 | 0.1     | Initial draft | Claude |
+| Date       | Version | Change                                                                              | Author |
+|------------|---------|-------------------------------------------------------------------------------------|--------|
+| 2026-07-11 | 0.1     | Initial draft                                                                       | Claude |
+| 2026-07-11 | 0.2     | Delivered. 4 sub-evaluators + orchestrator + DI + logging. 104/104 tests green.    | Claude |
