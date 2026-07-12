@@ -1,7 +1,7 @@
 ---
 id: PH-03
-version: 0.1
-status: draft
+version: 0.2
+status: done
 last_updated: 2026-07-11
 depends_on: [PH-02]
 estimated_effort: 2-3 weeks (1 dev)
@@ -54,3 +54,4 @@ After Phase 3, the sequence "user Saves UW tab → substatus lands in `PendingMa
 | Date       | Version | Change        | Author |
 |------------|---------|---------------|--------|
 | 2026-07-11 | 0.1     | Initial draft | Claude |
+| 2026-07-11 | 0.2     | Delivered. 7 entry-point handlers + registry + 4 Application commands. 196/196 tests green. IP-record + SkipBasePremiumRecalc directive flags surfaced only in audit — Phase 4 will wire ICpfIpFileService / ILinkedRidersRepricer to consume them. | Claude |
