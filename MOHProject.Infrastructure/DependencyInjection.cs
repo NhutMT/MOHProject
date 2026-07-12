@@ -28,6 +28,7 @@ public static class DependencyInjection
         services.AddSingleton<INextSubstatusEvaluator, NextSubstatusEvaluator>();
         services.AddSingleton<ILetterTypeEvaluator, LetterTypeEvaluator>();
         services.AddSingleton<IRemainingPlansEvaluator, RemainingPlansEvaluator>();
+        services.AddSingleton<IPremiumCollectionRecalculator, PremiumCollectionRecalculator>();
 
         // Entry-point handlers — one per entry substatus.
         services.AddSingleton<IEntryPointHandler, CondAcceptLetterGenHandler>();
