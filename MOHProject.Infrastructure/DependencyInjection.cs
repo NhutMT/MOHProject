@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MOHProject.Domain.Services;
+using MOHProject.Domain.Services.EntryPoints;
 using MOHProject.Infrastructure.Persistence;
 
 namespace MOHProject.Infrastructure;
@@ -26,6 +27,16 @@ public static class DependencyInjection
         services.AddSingleton<INextSubstatusEvaluator, NextSubstatusEvaluator>();
         services.AddSingleton<ILetterTypeEvaluator, LetterTypeEvaluator>();
         services.AddSingleton<IRemainingPlansEvaluator, RemainingPlansEvaluator>();
+
+        // Entry-point handlers — one per entry substatus.
+        services.AddSingleton<IEntryPointHandler, CondAcceptLetterGenHandler>();
+        services.AddSingleton<IEntryPointHandler, PendingUwCloaAssessmentHandler>();
+        services.AddSingleton<IEntryPointHandler, PendingCashCollectionHandler>();
+        services.AddSingleton<IEntryPointHandler, PendingIpRequestFileHandler>();
+        services.AddSingleton<IEntryPointHandler, PendingIpResponseCpfRejectedHandler>();
+        services.AddSingleton<IEntryPointHandler, PendingPpRequestFileHandler>();
+        services.AddSingleton<IEntryPointHandler, PendingPpResponseFileCpfRejectedHandler>();
+        services.AddSingleton<IEntryPointHandlerRegistry, EntryPointHandlerRegistry>();
 
         return services;
     }

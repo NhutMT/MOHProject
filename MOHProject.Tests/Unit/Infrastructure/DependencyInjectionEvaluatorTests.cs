@@ -46,4 +46,20 @@ public class DependencyInjectionEvaluatorTests
         evaluator.Should().NotBeNull(
             "Web startup calls AddInfrastructure — every downstream consumer should get RemainingPlansEvaluator via DI");
     }
+
+    [Fact]
+    public void AddInfrastructure_RegistersAll7EntryPointHandlers()
+    {
+        using var provider = (ServiceProvider)BuildProvider();
+
+        var handlers = provider.GetServices<IEntryPointHandler>().ToArray();
+
+        handlers.Should().HaveCount(7, "5 main entry substatuses + 2 NTU-only PP substatuses");
+        handlers.Select(h => h.EntrySubstatus).Should().OnlyHaveUniqueItems(
+            "each handler must claim a distinct entry substatus so the registry can dispatch unambiguously");
+
+        var registry = provider.GetRequiredService<IEntryPointHandlerRegistry>();
+        registry.ResolveFor(MOHProject.Domain.Enums.PolicySubstatus.ConditionalAcceptanceLetterGenerated)
+            .Should().BeOfType<MOHProject.Domain.Services.EntryPoints.CondAcceptLetterGenHandler>();
+    }
 }
