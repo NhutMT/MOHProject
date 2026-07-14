@@ -1,7 +1,7 @@
 ---
 id: PH-06
-version: 0.1
-status: draft
+version: 0.2
+status: done
 last_updated: 2026-07-11
 depends_on: [PH-03, PH-04, PH-05]
 estimated_effort: 1 week (1 dev)
@@ -47,3 +47,4 @@ Every action that changes an active-plan set must call `IRemainingPlansEvaluator
 | Date       | Version | Change        | Author |
 |------------|---------|---------------|--------|
 | 2026-07-11 | 0.1     | Initial draft | Claude |
+| 2026-07-12 | 0.2     | Delivered. ReAddRiderCommand added (re-add trigger). Architecture test (NetArchTest) enforces canonical evaluator-consumer list. 4 UAT bugs re-verified end-to-end through MarkRiderStatusCommand (not just evaluator). Domain-event refactor (PH-06-02/03) skipped — current explicit-call pattern is functionally equivalent and simpler; can be revisited if trigger count grows. 247/247 tests green. | Claude |
