@@ -39,8 +39,10 @@ public class UwDecisionCommandHandlerTests
             NullLogger<RemainingPlansEvaluator>.Instance);
     }
 
+    private readonly Mock<IReminderScheduler> _reminders = new();
+
     private UwDecisionCommandHandler CreateSut() =>
-        new(_repo.Object, _registry, _evaluator, _letters.Object, _audit.Object, new PassthroughUnitOfWork());
+        new(_repo.Object, _registry, _evaluator, _letters.Object, _audit.Object, new PassthroughUnitOfWork(), _reminders.Object);
 
     [Fact]
     public async Task ApsAtCondAccept_OverridesToPendingUwAps_EmitsMedicalEvidenceOnly()

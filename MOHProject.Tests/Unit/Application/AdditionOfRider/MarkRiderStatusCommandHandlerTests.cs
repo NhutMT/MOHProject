@@ -20,8 +20,10 @@ public class MarkRiderStatusCommandHandlerTests
         new LetterTypeEvaluator(),
         NullLogger<RemainingPlansEvaluator>.Instance);
 
+    private readonly Mock<IReminderScheduler> _reminders = new();
+
     private MarkRiderStatusCommandHandler CreateSut() =>
-        new(_repo.Object, _evaluator, _letters.Object, _audit.Object, new PassthroughUnitOfWork());
+        new(_repo.Object, _evaluator, _letters.Object, _audit.Object, new PassthroughUnitOfWork(), _reminders.Object);
 
     [Fact]
     public async Task DisallowedTargetStatus_ThrowsBeforeAnyIo()

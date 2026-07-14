@@ -7,7 +7,9 @@ using MOHProject.Domain.Enums;
 using MOHProject.Domain.Services;
 using MOHProject.Domain.Services.EntryPoints;
 using MOHProject.Domain.ValueObjects;
+using Microsoft.Extensions.Options;
 using MOHProject.Infrastructure.Persistence;
+using MOHProject.Infrastructure.Reminders;
 
 namespace MOHProject.Tests.Integration.Application;
 
@@ -118,7 +120,8 @@ public class UwDecisionCommandE2ETests
         IAuditTrailWriter audit = throwingAuditGuid is { } sentinel
             ? new ThrowingAudit(sentinel)
             : new EfAuditTrailWriter(db);
-        ILetterGenerator letters = new EfLetterGenerator(db);
+        var scheduler = new EfReminderScheduler(db, Options.Create(new ReminderSchedulingOptions()));
+        ILetterGenerator letters = new EfLetterGenerator(db, scheduler);
         IUnitOfWork uow = new EfUnitOfWork(db);
 
         var registry = new EntryPointHandlerRegistry(new IEntryPointHandler[]
@@ -138,7 +141,7 @@ public class UwDecisionCommandE2ETests
             new LetterTypeEvaluator(),
             NullLogger<RemainingPlansEvaluator>.Instance);
 
-        return new UwDecisionCommandHandler(repo, registry, evaluator, letters, audit, uow);
+        return new UwDecisionCommandHandler(repo, registry, evaluator, letters, audit, uow, scheduler);
     }
 
     private async Task<long> CreateCondAcceptPolicy()

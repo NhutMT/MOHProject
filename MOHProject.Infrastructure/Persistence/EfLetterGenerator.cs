@@ -19,10 +19,12 @@ namespace MOHProject.Infrastructure.Persistence;
 public sealed class EfLetterGenerator : ILetterGenerator
 {
     private readonly AppDbContext _db;
+    private readonly IReminderScheduler _reminders;
 
-    public EfLetterGenerator(AppDbContext db)
+    public EfLetterGenerator(AppDbContext db, IReminderScheduler reminders)
     {
         _db = db;
+        _reminders = reminders;
     }
 
     public async Task<Letter> GenerateAsync(long policyId, LetterType type, CancellationToken ct)
@@ -33,9 +35,15 @@ public sealed class EfLetterGenerator : ILetterGenerator
             .FirstOrDefaultAsync(p => p.Id == policyId, ct)
             ?? throw new InvalidOperationException($"Policy {policyId} not found.");
 
-        // Supersede any current letter of the same type on this policy.
-        foreach (var previous in policy.Letters.Where(l => l.Type == type && l.IsCurrent))
+        // Supersede any current letter of the same type on this policy — and
+        // cancel any Scheduled reminders whose parent letter matches by
+        // CorrelationId (PH-05 requirement).
+        var superseded = policy.Letters.Where(l => l.Type == type && l.IsCurrent).ToArray();
+        foreach (var previous in superseded)
+        {
             previous.IsCurrent = false;
+            await _reminders.CancelForAsync(previous.CorrelationId, ct);
+        }
 
         var included = SelectIncludedPlans(policy, type).ToList();
 

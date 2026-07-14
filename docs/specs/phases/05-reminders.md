@@ -1,7 +1,7 @@
 ---
 id: PH-05
-version: 0.1
-status: draft
+version: 0.2
+status: done
 last_updated: 2026-07-11
 depends_on: [PH-04]
 estimated_effort: 1-2 weeks (1 dev)
@@ -54,3 +54,4 @@ When a letter is issued, the system schedules reminder + final reminder jobs. Wh
 | Date       | Version | Change        | Author |
 |------------|---------|---------------|--------|
 | 2026-07-11 | 0.1     | Initial draft | Claude |
+| 2026-07-12 | 0.2     | Delivered scheduling/cancellation semantics (EfReminderScheduler using existing Reminders table). Supersession → cancel + PendingUwAps → cancel-all wired into commands. **Hangfire fire-time processing deferred** — Q-501/502/503 still open on cadence; default offsets 30/60 days in ReminderSchedulingOptions until BA confirms. 232/232 tests green. | Claude |

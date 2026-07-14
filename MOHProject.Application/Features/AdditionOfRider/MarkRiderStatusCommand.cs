@@ -33,19 +33,22 @@ public sealed class MarkRiderStatusCommandHandler
     private readonly ILetterGenerator _letters;
     private readonly IAuditTrailWriter _audit;
     private readonly IUnitOfWork _uow;
+    private readonly IReminderScheduler _reminders;
 
     public MarkRiderStatusCommandHandler(
         IPolicyRepository policies,
         IRemainingPlansEvaluator evaluator,
         ILetterGenerator letters,
         IAuditTrailWriter audit,
-        IUnitOfWork uow)
+        IUnitOfWork uow,
+        IReminderScheduler reminders)
     {
         _policies = policies;
         _evaluator = evaluator;
         _letters = letters;
         _audit = audit;
         _uow = uow;
+        _reminders = reminders;
     }
 
     public Task HandleAsync(MarkRiderStatusCommand command, CancellationToken ct)
@@ -91,7 +94,17 @@ public sealed class MarkRiderStatusCommandHandler
             // Main letter (LOA / CLOA per composition) — may be null when the new
             // substatus is outside the letter-gating set.
             if (evalResult.LetterToGenerate is { } main)
-                await _letters.GenerateAsync(policy.Id, main, innerCt);
+            {
+                var mainRow = await _letters.GenerateAsync(policy.Id, main, innerCt);
+
+                // Schedule reminders using the same FR-AOR-040 policy as UwDecisionCommand.
+                if (ShouldScheduleReminders(main, policy))
+                    await _reminders.ScheduleFromAsync(mainRow, innerCt);
+            }
+
+            // Substatus → PendingUwAps stops ALL reminders (doc lines 363-365).
+            if (evalResult.NextSubstatus == PolicySubstatus.PendingUwAps)
+                await _reminders.CancelAllForPolicyAsync(policy.Id, innerCt);
 
             await _policies.SaveAsync(policy, innerCt);
 
@@ -107,6 +120,18 @@ public sealed class MarkRiderStatusCommandHandler
                 MainLetter = evalResult.LetterToGenerate,
             }, innerCt);
         }
+    }
+
+    private static bool ShouldScheduleReminders(LetterType mainLetter, Policy policy)
+    {
+        var shortfall = policy.PremiumCollection?.TotalShortfall.IsPositive == true;
+        return mainLetter switch
+        {
+            LetterType.Loa => shortfall,
+            LetterType.CloaExclusion or LetterType.CloaRcmp
+                => shortfall || (policy.UWState?.AcceptCloa ?? AcceptCloa.Blank) != AcceptCloa.Yes,
+            _ => false,
+        };
     }
 
     private static LetterType DecisionLetterFor(ProductStatus status) => status switch

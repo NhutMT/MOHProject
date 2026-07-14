@@ -1,8 +1,10 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using MOHProject.Domain.Entities;
 using MOHProject.Domain.Enums;
 using MOHProject.Domain.ValueObjects;
 using MOHProject.Infrastructure.Persistence;
+using MOHProject.Infrastructure.Reminders;
 
 namespace MOHProject.Tests.Integration.Infrastructure;
 
@@ -21,7 +23,7 @@ public class EfLetterGeneratorTests
         Letter emitted;
         await using (var db = _fixture.CreateContext())
         {
-            var sut = new EfLetterGenerator(db);
+            var sut = NewLetterGenerator(db);
             emitted = await sut.GenerateAsync(policyId, LetterType.Loa, default);
         }
 
@@ -46,12 +48,12 @@ public class EfLetterGeneratorTests
         Letter v1, v2;
         await using (var db = _fixture.CreateContext())
         {
-            var sut = new EfLetterGenerator(db);
+            var sut = NewLetterGenerator(db);
             v1 = await sut.GenerateAsync(policyId, LetterType.Loa, default);
         }
         await using (var db = _fixture.CreateContext())
         {
-            var sut = new EfLetterGenerator(db);
+            var sut = NewLetterGenerator(db);
             v2 = await sut.GenerateAsync(policyId, LetterType.Loa, default);
         }
 
@@ -78,7 +80,7 @@ public class EfLetterGeneratorTests
 
         await using (var db = _fixture.CreateContext())
         {
-            var sut = new EfLetterGenerator(db);
+            var sut = NewLetterGenerator(db);
             await sut.GenerateAsync(policyId, LetterType.Loa, default);
             await sut.GenerateAsync(policyId, LetterType.CloaExclusion, default);
             // A new LOA should supersede the earlier LOA but leave the CLOA intact.
@@ -105,7 +107,7 @@ public class EfLetterGeneratorTests
         Letter loa;
         await using (var db = _fixture.CreateContext())
         {
-            loa = await new EfLetterGenerator(db).GenerateAsync(policyId, LetterType.Loa, default);
+            loa = await NewLetterGenerator(db).GenerateAsync(policyId, LetterType.Loa, default);
         }
 
         await using (var db = _fixture.CreateContext())
@@ -164,7 +166,7 @@ public class EfLetterGeneratorTests
         Letter ntu;
         await using (var db = _fixture.CreateContext())
         {
-            ntu = await new EfLetterGenerator(db).GenerateAsync(policyId, LetterType.NtuWithoutRefund, default);
+            ntu = await NewLetterGenerator(db).GenerateAsync(policyId, LetterType.NtuWithoutRefund, default);
         }
 
         await using (var db = _fixture.CreateContext())
@@ -189,7 +191,7 @@ public class EfLetterGeneratorTests
         Letter letter;
         await using (var db = _fixture.CreateContext())
         {
-            letter = await new EfLetterGenerator(db).GenerateAsync(policyId, LetterType.MedicalEvidence, default);
+            letter = await NewLetterGenerator(db).GenerateAsync(policyId, LetterType.MedicalEvidence, default);
         }
 
         await using (var db = _fixture.CreateContext())
@@ -205,7 +207,7 @@ public class EfLetterGeneratorTests
         var policyId = await CreatePolicy();
 
         await using var db = _fixture.CreateContext();
-        var sut = new EfLetterGenerator(db);
+        var sut = NewLetterGenerator(db);
 
         Func<Task> act = () => sut.GenerateAsync(policyId, (LetterType)999, default);
 
@@ -217,13 +219,16 @@ public class EfLetterGeneratorTests
     public async Task Generate_PolicyNotFound_Throws()
     {
         await using var db = _fixture.CreateContext();
-        var sut = new EfLetterGenerator(db);
+        var sut = NewLetterGenerator(db);
 
         Func<Task> act = () => sut.GenerateAsync(999_999_999, LetterType.Loa, default);
 
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*999999999*not found*");
     }
+
+    private static EfLetterGenerator NewLetterGenerator(AppDbContext db) =>
+        new(db, new EfReminderScheduler(db, Options.Create(new ReminderSchedulingOptions())));
 
     private async Task<long> CreatePolicy()
     {

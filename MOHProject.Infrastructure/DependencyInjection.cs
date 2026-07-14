@@ -5,6 +5,7 @@ using MOHProject.Application.Ports;
 using MOHProject.Domain.Services;
 using MOHProject.Domain.Services.EntryPoints;
 using MOHProject.Infrastructure.Persistence;
+using MOHProject.Infrastructure.Reminders;
 
 namespace MOHProject.Infrastructure;
 
@@ -45,6 +46,8 @@ public static class DependencyInjection
         services.AddScoped<IAuditTrailWriter, EfAuditTrailWriter>();
         services.AddScoped<ILetterGenerator, EfLetterGenerator>();
         services.AddScoped<IUnitOfWork, EfUnitOfWork>();
+        services.AddScoped<IReminderScheduler, EfReminderScheduler>();
+        services.Configure<ReminderSchedulingOptions>(configuration.GetSection(ReminderSchedulingOptions.SectionName));
 
         return services;
     }

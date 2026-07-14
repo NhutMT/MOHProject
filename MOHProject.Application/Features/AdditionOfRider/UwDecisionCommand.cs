@@ -22,6 +22,7 @@ public sealed class UwDecisionCommandHandler
     private readonly ILetterGenerator _letters;
     private readonly IAuditTrailWriter _audit;
     private readonly IUnitOfWork _uow;
+    private readonly IReminderScheduler _reminders;
 
     public UwDecisionCommandHandler(
         IPolicyRepository policies,
@@ -29,7 +30,8 @@ public sealed class UwDecisionCommandHandler
         IRemainingPlansEvaluator evaluator,
         ILetterGenerator letters,
         IAuditTrailWriter audit,
-        IUnitOfWork uow)
+        IUnitOfWork uow,
+        IReminderScheduler reminders)
     {
         _policies = policies;
         _handlers = handlers;
@@ -37,6 +39,7 @@ public sealed class UwDecisionCommandHandler
         _letters = letters;
         _audit = audit;
         _uow = uow;
+        _reminders = reminders;
     }
 
     public Task HandleAsync(UwDecisionCommand command, CancellationToken ct)
@@ -87,10 +90,23 @@ public sealed class UwDecisionCommandHandler
             composition = result.Composition;
 
             if (mainLetter is { } main)
-                await _letters.GenerateAsync(policy.Id, main, innerCt);
+            {
+                var mainLetterRow = await _letters.GenerateAsync(policy.Id, main, innerCt);
+
+                // Schedule reminders for main LOA/CLOA if there's an outstanding
+                // reason (shortfall > 0 for LOA; shortfall OR unaccepted CLOA
+                // reply for CLOA). Doc §FR-AOR-040 (source lines 339-372).
+                if (ShouldScheduleReminders(main, policy, updatedUwState: policy.UWState))
+                    await _reminders.ScheduleFromAsync(mainLetterRow, innerCt);
+            }
         }
 
         policy.Substatus = finalSubstatus;
+
+        // Substatus → PendingUwAps stops ALL reminders per doc lines 363-365.
+        if (finalSubstatus == PolicySubstatus.PendingUwAps)
+            await _reminders.CancelAllForPolicyAsync(policy.Id, innerCt);
+
         await _policies.SaveAsync(policy, innerCt);
 
         await _audit.WriteAsync(policy.Id, AuditEventType, command.ActorUserId, new
@@ -106,6 +122,25 @@ public sealed class UwDecisionCommandHandler
             directive.SkipBasePremiumRecalc,
         }, innerCt);
         }
+    }
+
+    // FR-AOR-040 scheduling rules (source lines 339-372).
+    private static bool ShouldScheduleReminders(LetterType mainLetter, Policy policy, UWState? updatedUwState)
+    {
+        var shortfall = policy.PremiumCollection?.TotalShortfall.IsPositive == true;
+
+        return mainLetter switch
+        {
+            // LOA reminders only if there's outstanding cash.
+            LetterType.Loa => shortfall,
+
+            // CLOA reminders if there's shortfall OR the customer hasn't accepted
+            // the CLOA yet (unaccepted = AcceptCloa != Yes).
+            LetterType.CloaExclusion or LetterType.CloaRcmp =>
+                shortfall || (updatedUwState?.AcceptCloa ?? AcceptCloa.Blank) != AcceptCloa.Yes,
+
+            _ => false,
+        };
     }
 
     private static PolicyContext BuildContext(Policy policy)
