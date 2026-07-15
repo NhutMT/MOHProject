@@ -81,6 +81,14 @@ Rules:
 - Every integration test picks its own unique data (`Guid.NewGuid()` in the name/key) — the fixture is shared across the collection and does NOT reset between tests. If you need reset semantics, wrap the test in a transaction and don't commit, or open a Respawn discussion before adding a global cleanup.
 - Assertions include a **because** message whenever the assertion encodes an assumption about SQL Server behavior (collation, decimal precision, `DateTime.Kind`) — the message must name the assumption so a future reader knows what breaks.
 
+## CI
+
+GitHub Actions runs on every push + PR to `main`. See [.github/workflows/ci.yml](.github/workflows/ci.yml).
+- Build: `dotnet build MOHProject.sln --configuration Release`
+- Unit tests: `dotnet test --filter FullyQualifiedName~Unit`
+- Integration tests: `dotnet test --filter FullyQualifiedName~Integration` (Testcontainers spins its own SQL Server per fixture — no shared service container needed)
+- If integration tests fail, download the `test-results` artifact to inspect the `.trx` files.
+
 ## Common commands
 
 ```bash

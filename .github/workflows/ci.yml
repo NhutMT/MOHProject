@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build + Test (Ubuntu · SQL Server 2022)
+    runs-on: ubuntu-latest
+
+    # SQL Server service for Testcontainers-independent integration tests.
+    # The SqlServerFixture in the test suite starts its own container per
+    # collection via Testcontainers; this service container is not used by
+    # tests directly but ensures Docker-in-Docker is warmed and the runner
+    # has DB tooling installed.
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_SA_PASSWORD: "yourStrong(!)Password"
+          MSSQL_PID: "Developer"
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'yourStrong(!)Password' -Q 'SELECT 1' -C -N -b || /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'yourStrong(!)Password' -Q 'SELECT 1' -b"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 20
+          --health-start-period 30s
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore MOHProject.sln
+
+      # Domain project has TreatWarningsAsErrors=true locally — enforced
+      # for enum-drift protection. Web/Tests are more permissive.
+      - name: Build (Release)
+        run: dotnet build MOHProject.sln --no-restore --configuration Release
+
+      - name: Test — Unit
+        run: dotnet test MOHProject.Tests/MOHProject.Tests.csproj --no-build --configuration Release --nologo --filter "FullyQualifiedName~Unit" --logger "trx;LogFileName=unit-tests.trx" --results-directory TestResults
+
+      # Integration tests spin their own SQL Server container via Testcontainers
+      # (see SqlServerFixture). The runner already has Docker available on
+      # ubuntu-latest, so no extra setup is required.
+      - name: Test — Integration
+        run: dotnet test MOHProject.Tests/MOHProject.Tests.csproj --no-build --configuration Release --nologo --filter "FullyQualifiedName~Integration" --logger "trx;LogFileName=integration-tests.trx" --results-directory TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults/
+          retention-days: 7
