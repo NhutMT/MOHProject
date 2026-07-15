@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using MOHProject.Application.Features.AdditionOfRider;
 using MOHProject.Application.Ports;
 using MOHProject.Domain.Services;
 using MOHProject.Domain.Services.EntryPoints;
@@ -48,6 +49,13 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, EfUnitOfWork>();
         services.AddScoped<IReminderScheduler, EfReminderScheduler>();
         services.Configure<ReminderSchedulingOptions>(configuration.GetSection(ReminderSchedulingOptions.SectionName));
+
+        // Application command handlers (scoped — hold scoped ports).
+        services.AddScoped<SaveUnderwritingTabCommandHandler>();
+        services.AddScoped<ResubmitForManualUwCommandHandler>();
+        services.AddScoped<UwDecisionCommandHandler>();
+        services.AddScoped<MarkRiderStatusCommandHandler>();
+        services.AddScoped<ReAddRiderCommandHandler>();
 
         return services;
     }
