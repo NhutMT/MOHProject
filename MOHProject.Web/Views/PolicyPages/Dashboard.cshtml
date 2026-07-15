@@ -1,0 +1,200 @@
+@model MOHProject.Web.ViewModels.PolicyDashboardVm
+@{
+    ViewData["Title"] = $"Policy {Model.PolicyNumber}";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] — MOH SHIELD</title>
+    <style>
+        :root { color-scheme: light dark; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+               margin: 0; padding: 0; background: #f5f5f7; color: #1d1d1f; }
+        header { background: #1d1d1f; color: #fff; padding: 16px 24px; }
+        header h1 { margin: 0; font-size: 18px; font-weight: 600; }
+        header .meta { font-size: 12px; color: #a1a1a6; margin-top: 4px; }
+        main { max-width: 1200px; margin: 24px auto; padding: 0 24px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card { background: #fff; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+        .card h2 { margin: 0 0 16px; font-size: 14px; text-transform: uppercase; letter-spacing: .5px; color: #6e6e73; font-weight: 600; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #f0f0f2; }
+        th { font-weight: 600; color: #6e6e73; font-size: 11px; text-transform: uppercase; letter-spacing: .3px; }
+        tr:last-child td { border-bottom: none; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; letter-spacing: .3px; }
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-warning { background: #fff3cd; color: #856404; }
+        .badge-info    { background: #d1ecf1; color: #0c5460; }
+        .badge-danger  { background: #f8d7da; color: #721c24; }
+        .badge-secondary { background: #e2e3e5; color: #383d41; }
+        .kv { display: grid; grid-template-columns: 180px 1fr; gap: 4px 12px; font-size: 13px; }
+        .kv dt { color: #6e6e73; }
+        .kv dd { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+        .money { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; text-align: right; }
+        .money.negative { color: #d70015; font-weight: 600; }
+        .row-inactive { opacity: 0.55; }
+        .row-inactive td::after { content: ''; }
+        .letter-superseded { text-decoration: line-through; opacity: 0.5; }
+        nav.top { margin: 12px 0 20px; font-size: 13px; }
+        nav.top a { color: #0071e3; text-decoration: none; margin-right: 12px; }
+        nav.top a:hover { text-decoration: underline; }
+        .empty { color: #a1a1a6; font-style: italic; text-align: center; padding: 24px; }
+        @@media (max-width: 800px) { .grid { grid-template-columns: 1fr; } .kv { grid-template-columns: 120px 1fr; } }
+    </style>
+</head>
+<body>
+<header>
+    <h1>MOH SHIELD — Policy @Model.PolicyNumber</h1>
+    <div class="meta">Type: @Model.Type · Insured @Model.InsuredResidency · Payer @Model.PayerResidency</div>
+</header>
+<main>
+    <nav class="top">
+        <a href="/">← Home</a>
+        <a href="/policies/@Model.PolicyNumber">JSON view</a>
+    </nav>
+
+    <div class="card" style="margin-bottom: 20px;">
+        <h2>Substatus</h2>
+        <span class="badge @Model.SubstatusBadgeClass" style="font-size: 14px;">@Model.Substatus</span>
+        @if (!string.IsNullOrEmpty(Model.UwCompletedAt))
+        {
+            <div style="margin-top: 8px; font-size: 12px; color: #6e6e73;">UW completed at @Model.UwCompletedAt</div>
+        }
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <h2>UW State</h2>
+            @if (Model.UwState is null)
+            {
+                <div class="empty">No UW state.</div>
+            }
+            else
+            {
+                <dl class="kv">
+                    <dt>RCMP Flag</dt><dd>@(Model.UwState.RcmpFlag ? "Ticked" : "Unticked") @(Model.UwState.RcmpFlagEnabled ? "" : "(greyed)")</dd>
+                    <dt>Accept CLOA</dt><dd>@Model.UwState.AcceptCloa @(Model.UwState.AcceptCloaEnabled ? "" : "(greyed)")</dd>
+                    <dt>RCMP Option</dt><dd>@Model.UwState.RcmpOption @(Model.UwState.RcmpOptionEnabled ? "" : "(greyed)")</dd>
+                    <dt>Complete UW</dt><dd>@(Model.UwState.CompleteUw ? "✓ auto-selected" : "—")</dd>
+                    <dt>Composition</dt><dd>@Model.UwState.CurrentComposition</dd>
+                </dl>
+            }
+        </div>
+
+        <div class="card">
+            <h2>Premium Summary</h2>
+            @if (Model.PremiumSummary is null)
+            {
+                <div class="empty">No premium collection.</div>
+            }
+            else
+            {
+                <table>
+                    <thead><tr><th></th><th style="text-align:right;">To Collect</th><th style="text-align:right;">Collected</th><th style="text-align:right;">Shortfall</th></tr></thead>
+                    <tbody>
+                        <tr>
+                            <td>Base</td>
+                            <td class="money">@Model.PremiumSummary.BaseToCollect</td>
+                            <td class="money">@Model.PremiumSummary.BaseCollected</td>
+                            <td class="money">@Model.PremiumSummary.BaseShortfall</td>
+                        </tr>
+                        <tr>
+                            <td>Linked Riders</td>
+                            <td class="money">@Model.PremiumSummary.LinkedRidersToCollect</td>
+                            <td class="money">@Model.PremiumSummary.LinkedRidersCollected</td>
+                            <td class="money">@Model.PremiumSummary.LinkedRidersShortfall</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Total shortfall</strong></td>
+                            <td colspan="2"></td>
+                            <td class="money @(Model.PremiumSummary.HasShortfall ? "negative" : "")">@Model.PremiumSummary.TotalShortfall</td>
+                        </tr>
+                        <tr>
+                            <td>Unallocated Cash</td>
+                            <td colspan="2"></td>
+                            <td class="money">@Model.PremiumSummary.UnallocatedCash</td>
+                        </tr>
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+
+    <div class="card" style="margin-top: 20px;">
+        <h2>Plans (@Model.Plans.Count)</h2>
+        <table>
+            <thead><tr><th>Product</th><th>Type</th><th>Status</th><th>Risk Category</th><th style="text-align:right;">Premium</th><th>Added</th><th>Status Changed</th></tr></thead>
+            <tbody>
+                @foreach (var plan in Model.Plans)
+                {
+                    var css = plan.Status is "Active" or "Draft" ? "" : "row-inactive";
+                    <tr class="@css">
+                        <td><strong>@plan.ProductCode</strong></td>
+                        <td>@(plan.IsBase ? "Base" : "Rider")</td>
+                        <td>@plan.Status</td>
+                        <td>@plan.RiskCategory</td>
+                        <td class="money">@plan.GrossPremium</td>
+                        <td>@(plan.AddedAt ?? "—")</td>
+                        <td>@(plan.StatusChangedAt ?? "—")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="grid" style="margin-top: 20px;">
+        <div class="card">
+            <h2>Letters (@Model.Letters.Count)</h2>
+            @if (Model.Letters.Count == 0)
+            {
+                <div class="empty">No letters yet.</div>
+            }
+            else
+            {
+                <table>
+                    <thead><tr><th>Type</th><th>Issued</th><th>Correlation</th><th>Current</th></tr></thead>
+                    <tbody>
+                        @foreach (var l in Model.Letters)
+                        {
+                            <tr class="@(l.IsCurrent ? "" : "letter-superseded")">
+                                <td>@l.Type</td>
+                                <td>@l.IssuedAt</td>
+                                <td style="font-family: ui-monospace, monospace; font-size: 11px;">@l.CorrelationId</td>
+                                <td>@(l.IsCurrent ? "✓" : "—")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+
+        <div class="card">
+            <h2>Recent Audit (@Model.RecentAudit.Count)</h2>
+            @if (Model.RecentAudit.Count == 0)
+            {
+                <div class="empty">No audit entries.</div>
+            }
+            else
+            {
+                <table>
+                    <thead><tr><th>When</th><th>Actor</th><th>Event</th></tr></thead>
+                    <tbody>
+                        @foreach (var a in Model.RecentAudit)
+                        {
+                            <tr>
+                                <td>@a.OccurredAt</td>
+                                <td>@a.ActorUserId</td>
+                                <td>@a.EventType</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</main>
+</body>
+</html>
